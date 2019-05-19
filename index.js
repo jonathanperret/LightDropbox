@@ -19,7 +19,7 @@ dbx = new Dropbox.Dropbox({ accessToken: query.token, fetch: fetch });
 
 listFolder(query.path || '');
 
-window.addEventListener('popstate', function() {
+window.addEventListener('hashchange', function() {
   query = parseHash();
   listFolder(query.path || '');
 });
@@ -43,13 +43,13 @@ function displayFiles(files) {
     var a = document.createElement('a');
     var filetype = files[i]['.tag'];
     var filepath = files[i].path_lower;
-    a.setAttribute('filepath', filepath);
-    a.setAttribute('filetype', filetype);
 
     if (filetype === 'folder') {
       a.setAttribute('href', '#token=' + query.token + '&path=' + encodeURIComponent(filepath));
     } else {
       a.setAttribute('href', '#');
+      a.setAttribute('target', '_blank');
+      a.setAttribute('filepath', filepath);
     }
 
     a.appendChild(document.createTextNode(files[i].name + (filetype === 'folder' ? '/' : '')));
@@ -65,18 +65,14 @@ filesList.addEventListener('click', function(evt) {
   if (clicked) {
     var filepath = clicked.getAttribute('filepath');
     if (filepath) {
-      var filetype = clicked.getAttribute('filetype');
-      if (filetype === 'folder') {
-        listFolder(filepath);
-      } else {
-        evt.preventDefault();
-        dbx.filesGetTemporaryLink({ path: filepath })
-        .then(function(result) {
-          clicked.style.color = 'green';
-          clicked.setAttribute('href', result.link);
-          clicked.removeAttribute('filepath');
-        });
-      }
+      evt.preventDefault();
+      clicked.style.color = 'red';
+      dbx.filesGetTemporaryLink({ path: filepath })
+      .then(function(result) {
+        clicked.style.color = 'green';
+        clicked.setAttribute('href', result.link);
+        clicked.removeAttribute('filepath');
+      });
     }
   }
 });
