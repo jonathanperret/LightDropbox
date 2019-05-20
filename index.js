@@ -17,12 +17,18 @@ var filesList = document.getElementById('files');
 
 dbx = new Dropbox.Dropbox({ accessToken: query.token, fetch: fetch });
 
-listFolder(query.path || '');
-
-window.addEventListener('hashchange', function() {
+function processHash() {
   query = parseHash();
-  listFolder(query.path || '');
-});
+  if (query.search) {
+    searchFiles(query.path || '', query.search);
+  } else {
+    listFolder(query.path || '');
+  }
+}
+
+processHash();
+
+window.addEventListener('hashchange', processHash);
 
 function listFolder(path) {
   dbx.filesListFolder({path: path})
@@ -33,6 +39,22 @@ function listFolder(path) {
       console.error(error);
       alert(error.toString());
     });
+}
+
+var searchText = document.getElementById('search-text');
+document.getElementById('search-form').addEventListener('submit', function(evt) {
+  evt.preventDefault();
+  location.hash = '#token=' + query.token + '&path=' + encodeURIComponent(query.path || '') + '&search=' + encodeURIComponent(searchText.value);
+});
+document.getElementById('search-reset').addEventListener('click', function() {
+  location.hash = '#token=' + query.token + '&path=' + encodeURIComponent(query.path || '');
+});
+
+function searchFiles(path, query) {
+  dbx.filesSearch({ path: path, query: query, mode: 'filename'})
+  .then(function(response) {
+    displayFiles(response.matches.map(function (match) { return match.metadata; }));
+  });
 }
 
 function displayFiles(files) {
